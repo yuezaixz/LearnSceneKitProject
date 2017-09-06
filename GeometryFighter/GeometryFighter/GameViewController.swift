@@ -50,7 +50,7 @@ class GameViewController: UIViewController {
         // 设置相机
         cameraNode.camera = SCNCamera()
         // 设置相机的坐标
-        cameraNode.position = SCNVector3(x: 0, y: 0, z: 10)
+        cameraNode.position = SCNVector3(x: 0, y: 5, z: 10)
         // 把相机添加到根节点
         scnScene.rootNode.addChildNode(cameraNode)
     }
@@ -98,10 +98,24 @@ class GameViewController: UIViewController {
             geometry = SCNTube(innerRadius: 0.4, outerRadius: 0.5, height: 1.0)
             print("管形状")
         }
+        geometry.materials.first?.diffuse.contents = UIColor.random()
         // 通过几何体来创建node
         let geometryNode = SCNNode(geometry: geometry)
+        geometryNode.physicsBody =
+            SCNPhysicsBody(type: .dynamic, shape: nil)
         // 把正方体node添加到场景中
         scnScene.rootNode.addChildNode(geometryNode)
+        
+        // 1
+        let randomX = Float.random(min: -2, max: 2)
+        let randomY = Float.random(min: 10, max: 18)
+        // 2
+        let force = SCNVector3(x: randomX, y: randomY , z: 0)
+        // 3
+        let position = SCNVector3(x: 0.05, y: 0.05, z: 0.05)
+        // 4
+        geometryNode.physicsBody?.applyForce(force,
+                                             at: position, asImpulse: true)
     }
     
     //MARK: others
