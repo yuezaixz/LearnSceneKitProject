@@ -60,12 +60,43 @@ class GameViewController: UIViewController {
     func spawnShape() {
         // 创建几何体
         var geometry:SCNGeometry
+        //SCNGeometry 相关文档 https://developer.apple.com/documentation/scenekit/scngeometry#//apple_ref/occ/cl/SCNGeometry
+        
         // 根据随机值来
         switch ShapeType.random() {
-        default:
+        case .box:
             // 正方体形状
             geometry = SCNBox(width: 1.0, height: 1.0, length: 1.0,
                               chamferRadius: 0.05)
+            print("正方体形状")
+        case .sphere:
+            // 球形状
+            geometry = SCNSphere(radius: 0.5)
+            print("球形状")
+        case .pyramid:
+            // 金字塔形状
+            geometry = SCNPyramid(width: 1.0, height: 1.0, length: 1.0)
+            print("金字塔形状")
+        case .torus:
+            // 环形状
+            geometry = SCNTorus(ringRadius: 0.5, pipeRadius: 0.4)
+            print("环形状")
+        case .capsule:
+            // 胶囊形状
+            geometry = SCNCapsule(capRadius: 0.2, height: 1.0)
+            print("胶囊形状")
+        case .cylinder:
+            // 圆柱形状
+            geometry = SCNCylinder(radius: 0.5, height: 1.0)
+            print("圆柱形状")
+        case .cone:
+            // 圆锥形状
+            geometry = SCNCone(topRadius: 0.1, bottomRadius: 0.5, height: 1.0)
+            print("圆锥形状")
+        case .tube:
+            // 管形状
+            geometry = SCNTube(innerRadius: 0.4, outerRadius: 0.5, height: 1.0)
+            print("管形状")
         }
         // 通过几何体来创建node
         let geometryNode = SCNNode(geometry: geometry)
