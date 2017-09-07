@@ -16,6 +16,7 @@ class GameViewController: UIViewController {
     var scnScene: SCNScene!
     var cameraNode: SCNNode!
     var game = GameHelper.sharedInstance
+    var splashNodes: [String: SCNNode] = [:]
     
     var spawnTime: TimeInterval = 0
     
@@ -24,8 +25,9 @@ class GameViewController: UIViewController {
         setupView()
         setupScene()
         setupCamera()
-        spawnShape()
         setupHUD()
+        setupSplash()
+        setupSounds()
     }
     
     //MARK: setup
@@ -34,7 +36,7 @@ class GameViewController: UIViewController {
         scnView = self.view as! SCNView
         scnView.delegate = self
         //显示统计
-        scnView.showsStatistics = true
+//        scnView.showsStatistics = true
         //允许摄像机控制属性，因为是游戏，所以不允许随意调整视角
         scnView.allowsCameraControl = false
         //默认灯光开启
@@ -66,33 +68,106 @@ class GameViewController: UIViewController {
         scnScene.rootNode.addChildNode(game.hudNode)
     }
     
+    func createSplash(name: String, imageFileName: String) -> SCNNode {
+        let plane = SCNPlane(width: 5, height: 5)
+        let splashNode = SCNNode(geometry: plane)
+        splashNode.position = SCNVector3(x: 0, y: 5, z: 0)
+        splashNode.name = name
+        splashNode.geometry?.materials.first?.diffuse.contents = imageFileName
+        scnScene.rootNode.addChildNode(splashNode)
+        return splashNode
+    }
+    
+    func setupSplash() {
+        splashNodes["TapToPlay"] = createSplash(name: "TAPTOPLAY",
+                                                imageFileName: "GeometryFighter.scnassets/Textures/TapToPlay_Diffuse.png")
+        splashNodes["GameOver"] = createSplash(name: "GAMEOVER",
+                                               imageFileName: "GeometryFighter.scnassets/Textures/GameOver_Diffuse.png")
+        showSplash(splashName: "TapToPlay")
+    }
+    
+    func setupSounds() {
+        game.loadSound("ExplodeGood",
+                       fileNamed: "GeometryFighter.scnassets/Sounds/ExplodeGood.wav")
+        game.loadSound("SpawnGood",
+                       fileNamed: "GeometryFighter.scnassets/Sounds/SpawnGood.wav")
+        game.loadSound("ExplodeBad",
+                       fileNamed: "GeometryFighter.scnassets/Sounds/ExplodeBad.wav")
+        game.loadSound("SpawnBad",
+                       fileNamed: "GeometryFighter.scnassets/Sounds/SpawnBad.wav")
+        game.loadSound("GameOver",
+                       fileNamed: "GeometryFighter.scnassets/Sounds/GameOver.wav")
+    }
+    
     //MARK: action
     
-    func handleTouchFor(node: SCNNode) {
-        if node.name == "GOOD" {
-            game.score += 1
-        } else if node.name == "BAD" {
-            game.lives -= 1
+    func showSplash(splashName: String) {
+        for (name,node) in splashNodes {
+            if name == splashName {
+                node.isHidden = false
+            } else {
+                node.isHidden = true
+            }
         }
-        createExplosion(geometry: node.geometry!,
-                        position: node.presentation.position,
-                        rotation: node.presentation.rotation)
-        node.removeFromParentNode()
+    }
+    
+    func handleGoodCollision() {
+        game.score += 1
+        game.playSound(scnScene.rootNode, name: "ExplodeGood")
+    }
+    
+    func handleBadCollision() {
+        game.lives -= 1
+        game.playSound(scnScene.rootNode, name: "ExplodeBad")
+        game.shakeNode(cameraNode)
         
+        if game.lives <= 0 {
+            game.saveState()
+            showSplash(splashName: "GameOver")
+            game.playSound(scnScene.rootNode, name: "GameOver")
+            game.state = .GameOver
+            scnScene.rootNode.runAction(SCNAction.waitForDurationThenRunBlock(5) { (node:SCNNode!) -> Void in
+                self.showSplash(splashName: "TapToPlay")
+                self.game.state = .TapToPlay
+            })
+        }
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
     {
-        // 1
-        let touch = touches.first!
-        // 2
-        let location = touch.location(in: scnView)
-        // 3
+        
+        if game.state == .GameOver {
+            return
+        }
+        
+        if game.state == .TapToPlay {
+            game.reset()
+            game.state = .Playing
+            showSplash(splashName: "")
+            return
+        }
+        
+        let touch = touches.first
+        let location = touch!.location(in: scnView)
         let hitResults = scnView.hitTest(location, options: nil)
-        // 4
+        
         if let result = hitResults.first {
-            // 5
-            handleTouchFor(node: result.node)
+            
+            if result.node.name == "HUD" ||
+                result.node.name == "GAMEOVER" ||
+                result.node.name == "TAPTOPLAY" {
+                return
+            } else if result.node.name == "GOOD" {
+                handleGoodCollision()
+            } else if result.node.name == "BAD" {
+                handleBadCollision()
+            }
+            
+            createExplosion(geometry: result.node.geometry!,
+                            position: result.node.presentation.position,
+                            rotation: result.node.presentation.rotation)
+            
+            result.node.removeFromParentNode()
         }
     }
     
@@ -247,13 +322,14 @@ extension GameViewController: SCNSceneRendererDelegate {
     // 2
     func renderer(_ renderer: SCNSceneRenderer,
                   updateAtTime time: TimeInterval) {
-        // 3
-        if time > spawnTime {
-            spawnShape()
-            // 2
-            spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
+        
+        if game.state == .Playing {
+            if time > spawnTime {
+                spawnShape()
+                spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
+            }
+            cleanScene()
         }
-        cleanScene()
         game.updateHUD()
     }
 }
