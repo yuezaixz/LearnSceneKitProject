@@ -16,6 +16,8 @@ class GameViewController: UIViewController {
     var scnScene: SCNScene!
     var cameraNode: SCNNode!
     
+    var spawnTime: TimeInterval = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -28,13 +30,15 @@ class GameViewController: UIViewController {
     
     func setupView() {
         scnView = self.view as! SCNView
-        
+        scnView.delegate = self
         //显示统计
         scnView.showsStatistics = true
         //允许摄像机控制
         scnView.allowsCameraControl = true
         //默认灯光开启
         scnView.autoenablesDefaultLighting = true
+        // 防止没有动作时候，进入自动暂停
+        scnView.isPlaying = true
     }
     
     func setupScene() {
@@ -118,6 +122,18 @@ class GameViewController: UIViewController {
                                              at: position, asImpulse: true)
     }
     
+    func cleanScene() {
+        // 1
+        for node in scnScene.rootNode.childNodes {
+            // 2 presentation为该node在当前动作后的一个copy
+            if node.presentation.position.y < -3 {
+                // 3
+                node.removeFromParentNode()
+            }
+        }
+        
+    }
+    
     //MARK: others
     
     override var shouldAutorotate: Bool {
@@ -140,4 +156,19 @@ class GameViewController: UIViewController {
         super.didReceiveMemoryWarning()
     }
 
+}
+
+extension GameViewController: SCNSceneRendererDelegate {
+    
+    // 2
+    func renderer(_ renderer: SCNSceneRenderer,
+                  updateAtTime time: TimeInterval) {
+        // 3
+        if time > spawnTime {
+            spawnShape()
+            // 2
+            spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
+        }
+        cleanScene()
+    }
 }
