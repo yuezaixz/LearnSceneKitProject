@@ -71,11 +71,14 @@ class GameViewController: UIViewController {
     func handleTouchFor(node: SCNNode) {
         if node.name == "GOOD" {
             game.score += 1
-            node.removeFromParentNode()
         } else if node.name == "BAD" {
             game.lives -= 1
-            node.removeFromParentNode()
         }
+        createExplosion(geometry: node.geometry!,
+                        position: node.presentation.position,
+                        rotation: node.presentation.rotation)
+        node.removeFromParentNode()
+        
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
@@ -169,7 +172,7 @@ class GameViewController: UIViewController {
                                              at: position, asImpulse: true)
     }
     
-    // 1
+    // 创建尾巴的粒子效果
     func createTrail(color: UIColor, geometry: SCNGeometry) -> SCNParticleSystem {
         // 2
         let trail = SCNParticleSystem(named: "Trail.scnp", inDirectory: nil)!
@@ -179,6 +182,28 @@ class GameViewController: UIViewController {
         trail.emitterShape = geometry
         // 5
         return trail
+    }
+    
+    // 点击后产生💥效果的粒子动画
+    func createExplosion(geometry: SCNGeometry, position: SCNVector3,
+                         rotation: SCNVector4) {
+        // 加载
+        let explosion =
+            SCNParticleSystem(named: "Explode.scnp", inDirectory:
+                nil)!
+        explosion.emitterShape = geometry
+        explosion.birthLocation = .surface
+        // 旋转、组合位置等
+        let rotationMatrix =
+            SCNMatrix4MakeRotation(rotation.w, rotation.x,
+                                   rotation.y, rotation.z)
+        let translationMatrix =
+            SCNMatrix4MakeTranslation(position.x, position.y,
+                                      position.z)
+        let transformMatrix =
+            SCNMatrix4Mult(rotationMatrix, translationMatrix)
+        // 4
+        scnScene.addParticleSystem(explosion, transform: transformMatrix)
     }
     
     func cleanScene() {
