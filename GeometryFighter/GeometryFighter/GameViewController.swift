@@ -15,6 +15,7 @@ class GameViewController: UIViewController {
     var scnView: SCNView!
     var scnScene: SCNScene!
     var cameraNode: SCNNode!
+    var game = GameHelper.sharedInstance
     
     var spawnTime: TimeInterval = 0
     
@@ -24,6 +25,7 @@ class GameViewController: UIViewController {
         setupScene()
         setupCamera()
         spawnShape()
+        setupHUD()
     }
     
     //MARK: setup
@@ -33,8 +35,8 @@ class GameViewController: UIViewController {
         scnView.delegate = self
         //显示统计
         scnView.showsStatistics = true
-        //允许摄像机控制
-        scnView.allowsCameraControl = true
+        //允许摄像机控制属性，因为是游戏，所以不允许随意调整视角
+        scnView.allowsCameraControl = false
         //默认灯光开启
         scnView.autoenablesDefaultLighting = true
         // 防止没有动作时候，进入自动暂停
@@ -57,6 +59,38 @@ class GameViewController: UIViewController {
         cameraNode.position = SCNVector3(x: 0, y: 5, z: 10)
         // 把相机添加到根节点
         scnScene.rootNode.addChildNode(cameraNode)
+    }
+    
+    func setupHUD() {
+        game.hudNode.position = SCNVector3(x: 0.0, y: 10.0, z: 0.0)
+        scnScene.rootNode.addChildNode(game.hudNode)
+    }
+    
+    //MARK: action
+    
+    func handleTouchFor(node: SCNNode) {
+        if node.name == "GOOD" {
+            game.score += 1
+            node.removeFromParentNode()
+        } else if node.name == "BAD" {
+            game.lives -= 1
+            node.removeFromParentNode()
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
+    {
+        // 1
+        let touch = touches.first!
+        // 2
+        let location = touch.location(in: scnView)
+        // 3
+        let hitResults = scnView.hitTest(location, options: nil)
+        // 4
+        if let result = hitResults.first {
+            // 5
+            handleTouchFor(node: result.node)
+        }
     }
     
     //MARK: logic
@@ -102,11 +136,24 @@ class GameViewController: UIViewController {
             geometry = SCNTube(innerRadius: 0.4, outerRadius: 0.5, height: 1.0)
             print("管形状")
         }
-        geometry.materials.first?.diffuse.contents = UIColor.random()
+        let color = UIColor.random()
+        geometry.materials.first?.diffuse.contents = color
         // 通过几何体来创建node
         let geometryNode = SCNNode(geometry: geometry)
         geometryNode.physicsBody =
             SCNPhysicsBody(type: .dynamic, shape: nil)
+        
+        //设置粒子效果
+        let trailEmitter = createTrail(color: color, geometry: geometry)
+        geometryNode.addParticleSystem(trailEmitter)
+        
+        //定义好的和坏的几何体
+        if color == UIColor.black {
+            geometryNode.name = "BAD"
+        } else {
+            geometryNode.name = "GOOD"
+        }
+        
         // 把正方体node添加到场景中
         scnScene.rootNode.addChildNode(geometryNode)
         
@@ -120,6 +167,18 @@ class GameViewController: UIViewController {
         // 4
         geometryNode.physicsBody?.applyForce(force,
                                              at: position, asImpulse: true)
+    }
+    
+    // 1
+    func createTrail(color: UIColor, geometry: SCNGeometry) -> SCNParticleSystem {
+        // 2
+        let trail = SCNParticleSystem(named: "Trail.scnp", inDirectory: nil)!
+        // 3
+        trail.particleColor = color
+        // 4
+        trail.emitterShape = geometry
+        // 5
+        return trail
     }
     
     func cleanScene() {
@@ -170,5 +229,6 @@ extension GameViewController: SCNSceneRendererDelegate {
             spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
         }
         cleanScene()
+        game.updateHUD()
     }
 }
