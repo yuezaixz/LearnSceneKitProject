@@ -56,13 +56,13 @@
 		A6163D331F692B0A005DAE91 /* MarbleMaze */ = {
 			isa = PBXGroup;
 			children = (
+				A6163D481F692C2E005DAE91 /* art.scnassets */,
 				A6163D341F692B0A005DAE91 /* AppDelegate.swift */,
 				A6163D381F692B0A005DAE91 /* GameViewController.swift */,
 				A6163D3A1F692B0A005DAE91 /* Main.storyboard */,
 				A6163D3D1F692B0A005DAE91 /* Assets.xcassets */,
 				A6163D3F1F692B0A005DAE91 /* LaunchScreen.storyboard */,
 				A6163D421F692B0A005DAE91 /* Info.plist */,
-				A6163D481F692C2E005DAE91 /* art.scnassets */,
 			);
 			path = MarbleMaze;
 			sourceTree = "<group>";
