@@ -18,16 +18,26 @@ class ViewController: UIViewController {
     var gameScene: SCNScene!
     var splashScene: SCNScene!
     
+    var pigNode: SCNNode!
+    
+    var cameraNode: SCNNode!
+    var cameraFollowNode: SCNNode!
+    
+    var lightFollowNode: SCNNode!
+    
+    var trafficNode: SCNNode!
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // 4
+        
         setupScenes()
         setupNodes()
         setupActions()
         setupTraffic()
         setupGestures()
         setupSounds()
-        // 5
+        
         game.state = .tapToPlay
     }
     
@@ -42,6 +52,20 @@ class ViewController: UIViewController {
         scnView.scene = splashScene
     }
     func setupNodes() {
+        pigNode = gameScene.rootNode.childNode(withName: "MrPig", recursively:
+            true)!
+        
+        cameraNode = gameScene.rootNode.childNode(withName: "camera",
+                                                  recursively: true)!
+        cameraNode.addChildNode(game.hudNode)
+        cameraFollowNode = gameScene.rootNode.childNode(withName: "FollowCamera",
+                                                        recursively: true)!
+        
+        lightFollowNode = gameScene.rootNode.childNode(withName: "FollowLight",
+                                                       recursively: true)!
+        
+        trafficNode = gameScene.rootNode.childNode(withName: "Traffic",
+                                                   recursively: true)!
     }
     func setupActions() {
     }
